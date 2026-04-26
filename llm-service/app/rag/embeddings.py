@@ -15,8 +15,8 @@ class EmbeddingEngine:
     def __init__(self):
         self._client = None
         self._model_name = settings.embedding_model
-        # Gemini text-embedding-004 outputs 768 dimensions
-        self._dimension = 768
+        # gemini-embedding-001 outputs 3072 dimensions
+        self._dimension = 3072
 
     @property
     def client(self):

@@ -15,8 +15,8 @@ class EmbeddingEngine:
     def __init__(self):
         self._client = None
         self._model_name = settings.embedding_model
-        # gemini-embedding-001 outputs 3072 dimensions
-        self._dimension = 3072
+        # Configured to output 768 dimensions (Pinecone Starter plan compatible)
+        self._dimension = 768
 
     @property
     def client(self):
@@ -30,7 +30,8 @@ class EmbeddingEngine:
         try:
             response = self.client.models.embed_content(
                 model=self._model_name,
-                contents=texts
+                contents=texts,
+                config={"output_dimensionality": 768}
             )
             # Extact embeddings and convert to numpy array
             embeddings = [emb.values for emb in response.embeddings]

@@ -1,0 +1,66 @@
+# ─── Server ──────────────────────────────────────────────────
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sdi-api-gateway
+
+  # ─── PostgreSQL Database ────────────────────────────────
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/sdi_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${DATABASE_USERNAME:sdi_user}
+    password: ${DATABASE_PASSWORD:sdi_pass}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  # ─── Redis ──────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+      timeout: 5000
+
+  # ─── Jackson ────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ─── Application Config ──────────────────────────────────────
+app:
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+  llm-service:
+    url: ${LLM_SERVICE_URL:http://localhost:8000}
+  interview:
+    max-rounds: 6
+    session-ttl-minutes: 30
+    default-company-mode: GENERAL
+
+# ─── Logging ──────────────────────────────────────────────────
+logging:
+  level:
+    com.sdi: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ─── Swagger / OpenAPI ────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
+    operationsSorter: method

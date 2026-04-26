@@ -1,0 +1,59 @@
+services:
+  # ─── API Gateway (Spring Boot) ─────────────────────────
+  - type: web
+    name: sdi-api-gateway
+    env: docker
+    region: ohio
+    plan: free
+    dockerContext: ./api-gateway
+    dockerfilePath: ./api-gateway/Dockerfile
+    branch: main
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_SSL
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_SERVICE_URL
+        fromService:
+          name: sdi-llm-service
+          type: web
+          envVarKey: RENDER_INTERNAL_HOSTNAME
+          # Appends the port to the internal hostname
+          property: host:8000
+
+  # ─── LLM Service (Python/FastAPI) ─────────────────────
+  - type: web
+    name: sdi-llm-service
+    env: docker
+    region: ohio
+    plan: free
+    dockerContext: ./llm-service
+    dockerfilePath: ./llm-service/Dockerfile
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: sdi-knowledge
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false

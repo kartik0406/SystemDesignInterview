@@ -32,7 +32,7 @@ services:
         fromService:
           name: sdi-llm-service
           type: web
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL
 
   # ─── LLM Service (Python/FastAPI) ─────────────────────
   - type: web

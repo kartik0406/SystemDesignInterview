@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     knowledge_dir: str = "./data/knowledge"
 
     # ─── Embeddings ───────────────────────────────────────────
-    embedding_model: str = "text-embedding-004"
+    embedding_model: str = "gemini-embedding-exp-03-07"
 
     class Config:
         env_file = ".env"

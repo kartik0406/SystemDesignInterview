@@ -32,9 +32,7 @@ services:
         fromService:
           name: sdi-llm-service
           type: web
-          envVarKey: RENDER_INTERNAL_HOSTNAME
-          # Appends the port to the internal hostname
-          property: host:8000
+          property: url
 
   # ─── LLM Service (Python/FastAPI) ─────────────────────
   - type: web

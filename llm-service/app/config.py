@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     knowledge_dir: str = "./data/knowledge"
 
     # ─── Embeddings ───────────────────────────────────────────
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "text-embedding-004"
 
     class Config:
         env_file = ".env"

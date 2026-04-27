@@ -1,278 +1,329 @@
-# 📄 AskMyDocs — Production RAG Application
+# 🧠 AI System Design Interviewer
 
-> A domain-specific **"Ask My Docs"** system with hybrid retrieval (BM25 + vector search), cross-encoder reranking, and citation enforcement — powered by Elasticsearch, Pinecone, and Google Gemini.
+A production-grade, cloud-deployed **multi-agent GenAI platform** that simulates adaptive system design interviews. Built with **Spring Boot 3**, **Python/FastAPI**, **Google Gemini**, **Pinecone RAG**, and **React** — deployed across **Render**, **Vercel**, **Supabase**, and **Upstash**.
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?logo=fastapi)
-![Streamlit](https://img.shields.io/badge/Streamlit-Frontend-red?logo=streamlit)
-![Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-orange?logo=google)
+> **Live Demo:** [Frontend (Vercel)](https://systemdesigninterviews-mjsoi6stq-kartik0406s-projects.vercel.app) · [API Gateway (Render)](https://sdi-api-gateway.onrender.com) · [LLM Service (Render)](https://sdi-llm-service.onrender.com/health)
 
 ---
 
-## 🎯 Use Cases
-
-| Use Case | Description |
-|----------|-------------|
-| **Resume Q&A** | Upload your resume and ask "What are my skills?", "What is my phone number?" |
-| **Legal Document Analysis** | Upload contracts/agreements and extract key clauses, dates, parties |
-| **Research Paper Q&A** | Upload academic papers and ask about methodology, findings, conclusions |
-| **HR Policy Lookup** | Upload employee handbooks and ask about leave policies, benefits, etc. |
-| **Invoice/Report Analysis** | Upload financial documents and extract totals, vendor details, dates |
-
----
-
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         AskMyDocs RAG Pipeline                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌──────────┐     ┌───────────────┐     ┌──────────────────────────┐   │
-│  │  PDF      │────▶│ PyPDFLoader   │────▶│ RecursiveCharacterText   │   │
-│  │  Upload   │     │ (parsing)     │     │ Splitter (800/200)       │   │
-│  └──────────┘     └───────────────┘     └────────────┬─────────────┘   │
-│                                                       │                 │
-│                                          ┌────────────┴────────────┐   │
-│                                          ▼                         ▼   │
-│                                ┌──────────────────┐  ┌──────────────┐ │
-│                                │  Elasticsearch    │  │  Pinecone    │ │
-│                                │  (BM25 Index)     │  │  (Vectors)   │ │
-│                                │  Fuzzy Matching   │  │  Gemini Emb. │ │
-│                                └────────┬─────────┘  └──────┬───────┘ │
-│                                         │                    │         │
-│  ┌──────────┐                ┌──────────┴────────────────────┘         │
-│  │  User     │───────────────▶  Hybrid Search (α-blend fusion)        │
-│  │  Query    │                └─────────────┬──────────────────         │
-│  └──────────┘                               ▼                          │
-│                                ┌─────────────────────────┐             │
-│                                │  Cross-Encoder Reranking │             │
-│                                │  (Gemini-based scoring)  │             │
-│                                └────────────┬────────────┘             │
-│                                             ▼                          │
-│                                ┌─────────────────────────┐             │
-│                                │  Gemini 2.5 Flash        │             │
-│                                │  (Citation-enforced      │             │
-│                                │   answer generation)     │             │
-│                                └────────────┬────────────┘             │
-│                                             ▼                          │
-│                                ┌─────────────────────────┐             │
-│                                │  Answer with [Source N]  │             │
-│                                │  citations + sources     │             │
-│                                └─────────────────────────┘             │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Frontend (React + Vite)                       │
+│                         Hosted on Vercel                             │
+└────────────────────────────────┬─────────────────────────────────────┘
+                                 │ HTTPS
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                  API Gateway (Spring Boot 3 / Java 21)               │
+│                        Hosted on Render                              │
+│                                                                      │
+│  ┌──────────────────┐  ┌─────────────────┐  ┌───────────────────┐   │
+│  │ Interview Agent   │  │ Question Agent  │  │ Evaluation Agent  │   │
+│  │  (Orchestrator)   │──│  (Generates Qs) │  │ (Scores Answers)  │   │
+│  └──────────────────┘  └─────────────────┘  └───────────────────┘   │
+│           │                                          │               │
+│  ┌────────┴──────────┐                    ┌──────────┴────────┐     │
+│  │   Hint Agent      │                    │  Session Service   │     │
+│  │ (Progressive Hints)│                   │  (State Machine)   │     │
+│  └───────────────────┘                    └───────────────────┘     │
+│           │                                     │          │         │
+└───────────┼─────────────────────────────────────┼──────────┼─────────┘
+            │ HTTP                                │          │
+            ▼                                     ▼          ▼
+┌──────────────────────────┐        ┌───────────────┐  ┌──────────┐
+│ LLM Service (FastAPI)    │        │   Supabase     │  │ Upstash  │
+│    Hosted on Render      │        │  PostgreSQL    │  │  Redis   │
+│                          │        └───────────────┘  └──────────┘
+│  ┌────────────────────┐  │
+│  │  MCP Tool Layer    │  │
+│  │  ├─ RAG Tool       │  │───▶  Pinecone (Vector DB)
+│  │  ├─ Scoring Tool   │  │
+│  │  ├─ Diagram Tool   │  │───▶  Google Gemini API
+│  │  └─ Hint Tool      │  │
+│  └────────────────────┘  │
+└──────────────────────────┘
 ```
 
 ---
 
-## ⚡ Key Features
+## ⚡ Tech Stack
 
-### 🔍 Hybrid Retrieval (BM25 + Vector Search)
-- **BM25 (Elasticsearch)**: Keyword-based search with fuzzy matching, handles typos and partial terms
-- **Vector Search (Pinecone + Gemini Embeddings)**: Semantic search using `text-embedding-004` — understands meaning, not just keywords
-- **Alpha-Blended Fusion**: Min-max normalized scores combined with configurable α weighting
-
-### 🎯 Cross-Encoder Reranking
-- Gemini-based relevance scoring (0-10) for each passage against the query
-- Reorders hybrid search results by true relevance
-- Zero memory overhead — API-based, no local PyTorch models
-
-### 📑 Citation Enforcement
-- Source passages numbered `[Source 1]`, `[Source 2]`, etc.
-- LLM forced to cite `[Source N]` after every claim
-- Expandable source viewer in the UI — click to verify any citation
-
-### 📄 Smart Document Processing
-- PDF parsing via PyPDFLoader
-- RecursiveCharacterTextSplitter with 800-character chunks and 200-character overlap
-- Dual indexing to both Elasticsearch and Pinecone
+| Layer | Technology | Hosting |
+|-------|-----------|---------|
+| Frontend | React 19, Vite 5, Vanilla CSS | **Vercel** (Free) |
+| API Gateway | Spring Boot 3.3, Java 21 | **Render** (Docker, Free) |
+| LLM Service | Python 3.12, FastAPI, Google Gemini | **Render** (Docker, Free) |
+| Vector DB | Pinecone (Gemini Embeddings, 768d) | **Pinecone** (Starter, Free) |
+| Database | PostgreSQL 15 | **Supabase** (Free) |
+| Session Memory | Redis 7 | **Upstash** (Free) |
+| LLM Provider | Google Gemini 2.5 Flash | **Google AI Studio** (Free) |
 
 ---
 
-## 📂 Project Structure
+## 🎯 Key Features
 
-```
-AskMyDocs-RAG/
-├── backend/
-│   ├── main.py              # FastAPI app — /upload and /ask endpoints
-│   ├── config.py            # Environment variable configuration
-│   ├── retrieve.py          # Hybrid search, embeddings, reranking
-│   ├── generate.py          # Gemini LLM — citation-enforced generation
-│   └── requirements.txt     # Backend dependencies
-├── frontend/
-│   └── app.py               # Streamlit chat UI
-├── render.yaml              # Render deployment config
-├── requirements.txt         # Root dependencies (Render uses this)
-├── .env                     # API keys (not committed)
-├── .env.example             # Template for required env vars
-└── README.md
-```
+- **Adaptive Difficulty** — Questions adjust based on answer quality (score ≥ 8 → harder, ≤ 4 → easier)
+- **Multi-Agent Architecture (A2A)** — Specialized agents for question generation, evaluation, and hints
+- **MCP Tool Layer** — LLM tools for RAG retrieval, rubric scoring, Mermaid diagrams, and progressive hints
+- **RAG Knowledge Base** — Pinecone-powered retrieval with Gemini Embeddings for grounded feedback
+- **Structured Rubric Scoring** — 5-dimension evaluation: Scalability, Database Design, API Design, Trade-offs, Clarity
+- **Company Modes** — Tailored interviews for Google (scalability focus), Amazon (trade-offs), and General
+- **Progressive Hints** — 3-level hint system: Nudge → Direction → Partial Solution
+- **Architecture Diagrams** — Auto-generated Mermaid diagrams for system visualization
+- **Full Cloud Deployment** — Zero infrastructure, 100% free-tier hosted
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option A: Cloud (Production)
+
+The app is fully deployed and accessible via the live demo links above. No setup required.
+
+### Option B: Local Development
+
+#### Prerequisites
+- Java 21+
 - Python 3.11+
-- API Keys for:
-  - [Elasticsearch Cloud](https://cloud.elastic.co/) (Cloud ID + API Key)
-  - [Pinecone](https://www.pinecone.io/) (API Key + Index named `askmydocs`, 384 dimensions, cosine metric)
-  - [Google Gemini API](https://aistudio.google.com/apikey)
+- Node.js 20+
+- Docker (for Redis, or use Upstash)
+- Google Gemini API key
 
-### Installation
-
+#### 1. Clone and configure
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/AskMyDocs-RAG.git
-cd AskMyDocs-RAG
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate   # Mac/Linux
-# venv\Scripts\activate    # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Configure Environment
-
-```bash
+git clone https://github.com/kartik0406/SystemDesignInterview.git
+cd SystemDesignInterview
 cp .env.example .env
-# Edit .env with your API keys:
-#   ELASTIC_CLOUD_ID=...
-#   ELASTIC_API_KEY=...
-#   PINECONE_API_KEY=...
-#   PINECONE_INDEX=askmydocs
-#   GEMINI_API_KEY=...
+# Edit .env with your API keys and database credentials
 ```
 
-### Run Locally
-
-**Terminal 1 — Backend (FastAPI):**
+#### 2. Start with Docker Compose
 ```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 10000 --reload
+docker-compose up -d
 ```
 
-**Terminal 2 — Frontend (Streamlit):**
+#### 3. Or run services individually
+
+**Redis:**
+```bash
+docker run -d -p 6379:6379 redis:7-alpine
+```
+
+**LLM Service (Python):**
+```bash
+cd llm-service
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+**API Gateway (Spring Boot):**
+```bash
+cd api-gateway
+mvn spring-boot:run
+```
+
+**Frontend (React):**
 ```bash
 cd frontend
-streamlit run app.py
+npm install && npm run dev
 ```
 
-Open **http://localhost:8501** → Upload a PDF → Start asking questions!
+#### 4. Open in browser
+Visit `http://localhost:5173`
 
 ---
 
-## 📚 API Endpoints
+## 📚 Building the RAG Index
 
-### `GET /` — Health Check
-```json
-{"status": "ok"}
+Populate the Pinecone vector database with system design knowledge:
+
+```bash
+cd llm-service
+python -m scripts.build_index
 ```
 
-### `POST /upload` — Upload & Index a PDF
-- **Body**: `multipart/form-data` with `file` field
-- **Response**:
-```json
-{
-  "message": "Indexed successfully",
-  "doc_id": "b8a0be16-1fa6-4020-a548-13cbbaa097f6",
-  "chunks": 24
-}
+This reads the markdown files in `knowledge-base/` and embeds them into Pinecone using Gemini Embeddings.
+
+---
+
+## 🔌 API Endpoints
+
+### Interview Flow
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/interview/start` | Start a new interview session |
+| `POST` | `/api/v1/interview/answer` | Submit an answer for evaluation |
+| `GET` | `/api/v1/interview/session/{id}` | Get current session state |
+| `GET` | `/api/v1/interview/result/{id}` | Get final interview report |
+| `POST` | `/api/v1/interview/hint` | Request a progressive hint |
+| `GET` | `/api/v1/interview/topics` | List available topics |
+
+### Agent Discovery & Tools
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/.well-known/agent-cards` | A2A agent discovery |
+| `GET` | `/tools/manifest` | MCP tool manifest |
+| `POST` | `/tools/rag/query` | RAG knowledge retrieval |
+| `POST` | `/tools/generate-question` | Generate interview question |
+| `POST` | `/tools/score` | Evaluate candidate answer |
+| `POST` | `/tools/diagram` | Generate Mermaid diagram |
+| `POST` | `/tools/hint` | Generate progressive hint |
+
+---
+
+## 📁 Project Structure
+
+```
+SystemDesignInterviewAgent/
+├── api-gateway/                  # Spring Boot 3 API Gateway + Agent Orchestrator
+│   ├── Dockerfile
+│   ├── pom.xml
+│   └── src/main/java/com/sdi/gateway/
+│       ├── agent/                # A2A Agents (Interview, Question, Evaluation, Hint)
+│       ├── client/               # HTTP client to Python LLM Service
+│       ├── config/               # Redis, CORS, WebSocket, App configs
+│       ├── controller/           # REST endpoints (Interview, Health)
+│       ├── exception/            # Global error handling
+│       ├── model/
+│       │   ├── dto/              # Request/Response DTOs
+│       │   ├── entity/           # JPA Entities (InterviewSession, EvaluationResult)
+│       │   └── enums/            # CompanyMode, DifficultyLevel, SessionStatus
+│       ├── repository/           # JPA Repositories (Supabase PostgreSQL)
+│       └── service/              # Business logic (InterviewService, SessionService)
+│
+├── llm-service/                  # Python FastAPI — MCP Tool Server
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── app/
+│       ├── config.py             # Settings (env vars, model config)
+│       ├── main.py               # FastAPI app entry point
+│       ├── llm/
+│       │   ├── gemini_client.py  # Gemini API wrapper (text + JSON generation)
+│       │   └── prompts.py        # All prompt templates
+│       ├── rag/
+│       │   ├── embeddings.py     # Gemini Embedding Engine (768d, MRL)
+│       │   └── retriever.py      # Pinecone vector retriever
+│       ├── routers/
+│       │   └── mcp_tools.py      # MCP tool endpoints
+│       └── tools/
+│           ├── rag_tool.py       # RAG retrieval + fallback knowledge
+│           ├── scoring_tool.py   # Rubric-based evaluation
+│           ├── diagram_tool.py   # Mermaid diagram generation
+│           └── hint_tool.py      # Progressive hint generation
+│
+├── frontend/                     # React + Vite — Premium UI
+│   ├── Dockerfile
+│   ├── vercel.json               # Vercel SPA routing config
+│   ├── package.json
+│   └── src/
+│       ├── App.jsx               # Router (Landing → Interview → Results)
+│       ├── api.js                # API client (axios)
+│       └── pages/
+│           ├── LandingPage.jsx   # Topic selection + company mode
+│           ├── InterviewPage.jsx # Chat interface + hint system
+│           └── ResultsPage.jsx   # Scores, rubric breakdown, diagram
+│
+├── knowledge-base/               # System design knowledge for RAG
+│   ├── patterns/                 # Caching, Sharding, CAP, Load Balancing, etc.
+│   └── architectures/            # URL Shortener, Netflix, Uber designs
+│
+├── render.yaml                   # Render Blueprint (IaC for backend deployment)
+├── docker-compose.yml            # Local development orchestration
+└── .env.example                  # Environment variable template
 ```
 
-### `POST /ask` — Ask a Question
-- **Query Params**: `query` (string), `doc_id` (string)
-- **Response**:
-```json
-{
-  "answer": "The employee name is **KARTIK KHANNA** [Source 1].",
-  "docs": ["chunk1 text...", "chunk2 text..."]
-}
+---
+
+## ☁️ Cloud Deployment
+
+This project is deployed using **free tiers** across multiple cloud providers:
+
+| Service | Provider | Config File |
+|---------|----------|-------------|
+| API Gateway | [Render](https://render.com) | `render.yaml` |
+| LLM Service | [Render](https://render.com) | `render.yaml` |
+| Frontend | [Vercel](https://vercel.com) | `frontend/vercel.json` |
+| Database | [Supabase](https://supabase.com) | `application.yml` |
+| Redis | [Upstash](https://upstash.com) | `application.yml` |
+| Vector DB | [Pinecone](https://pinecone.io) | `config.py` |
+
+### Environment Variables
+
+```env
+# LLM Provider
+GEMINI_API_KEY=your_gemini_api_key
+
+# Supabase (PostgreSQL)
+DATABASE_URL=jdbc:postgresql://db.xxx.supabase.co:6543/postgres?prepareThreshold=0
+DATABASE_USERNAME=postgres.xxx
+DATABASE_PASSWORD=your_password
+
+# Upstash (Redis)
+REDIS_HOST=your-endpoint.upstash.io
+REDIS_PORT=6379
+REDIS_PASSWORD=your_upstash_password
+REDIS_SSL=true
+
+# Pinecone
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_INDEX_NAME=sdi-knowledge
+
+# Frontend (Vercel)
+VITE_API_URL=https://sdi-api-gateway.onrender.com
 ```
 
 ---
 
-## 🔄 RAG Pipeline — How It Works
+## 🧪 Interview Flow
 
-| Stage | Component | What It Does |
-|-------|-----------|-------------|
-| **1. Ingest** | `PyPDFLoader` + `RecursiveCharacterTextSplitter` | Parses PDF → 800-char chunks with 200-char overlap |
-| **2. Index** | Elasticsearch + Pinecone | Dual-indexes: BM25 text index + Gemini embedding vectors (384-dim) |
-| **3. Retrieve** | `hybrid_search()` | Runs BM25 (fuzzy) + vector search in parallel, α-blends normalized scores |
-| **4. Rerank** | `rerank_with_gemini()` | Gemini scores each passage 0-10 for relevance, reorders by score |
-| **5. Generate** | `generate_answer()` | Sends top 8 reranked chunks to Gemini 2.5 Flash with citation-enforced prompt |
-| **6. Cite** | Prompt engineering | LLM must cite `[Source N]` for every claim; UI shows expandable source list |
-
----
-
-## ☁️ Deployment
-
-### Render (Backend API)
-
-1. Push code to GitHub
-2. Create a new **Web Service** on [Render](https://render.com)
-3. Connect your repo — Render auto-detects `render.yaml`
-4. Add environment variables in Render dashboard
-5. Deploy → API available at `https://your-app.onrender.com`
-
-### Streamlit Cloud (Frontend)
-
-1. Go to [Streamlit Cloud](https://share.streamlit.io)
-2. Connect repo → set main file to `frontend/app.py`
-3. Go to **Settings → Secrets** and add:
-   ```toml
-   API_URL = "https://your-app.onrender.com"
-   ```
-4. Deploy → UI available at `https://your-app.streamlit.app`
-
----
-
-## 📦 Tech Stack
-
-| Technology | Role |
-|-----------|------|
-| **FastAPI** | Backend REST API |
-| **Streamlit** | Chat-based frontend UI |
-| **Elasticsearch Cloud** | BM25 keyword search with fuzzy matching |
-| **Pinecone** | Vector database for semantic search |
-| **Google Gemini 2.5 Flash** | LLM for answer generation + reranking |
-| **Gemini embedding-001** | Embedding model (384-dim via MRL truncation, API-based) |
-| **LangChain** | PDF loading + text splitting |
-| **Python 3.11** | Runtime |
+```
+User selects topic (e.g., "Design Netflix")
+        │
+        ▼
+InterviewAgent creates session → stores in Supabase
+        │
+        ▼
+QuestionAgent fetches RAG context from Pinecone
+        │
+        ▼
+Gemini generates adaptive question based on:
+  • Topic + difficulty level
+  • Previous Q&A history (Redis)
+  • RAG knowledge context
+        │
+        ▼
+User submits answer
+        │
+        ▼
+EvaluationAgent scores on 5 rubric dimensions
+        │
+        ▼
+Difficulty adjusts: score ≥ 8 → harder, ≤ 4 → easier
+        │
+        ▼
+Repeat for 6 rounds → Final Report with:
+  • Overall score
+  • Rubric breakdown (radial chart)
+  • Strengths / Weaknesses
+  • Architecture diagram (Mermaid)
+```
 
 ---
 
-## 🐛 Troubleshooting
+## 💡 Resume Bullet Points
 
-| Problem | Solution |
-|---------|----------|
-| `No open ports detected` (Render) | Ensure start command uses `--host 0.0.0.0 --port $PORT` |
-| `Out of memory` (Render 512MB) | Don't install `sentence-transformers` — use Gemini embeddings API instead |
-| PDF upload fails | Check file isn't corrupted; ensure Elasticsearch index `docs` exists |
-| "No relevant information found" | Re-upload PDF (needed after embedding model changes) |
-| Slow first query | Gemini API cold start — subsequent queries are faster |
-| `ConnectionError` on Streamlit Cloud | `API_URL` secret not set — add it in Streamlit Cloud → Settings → Secrets |
-
----
-
-## 🔐 Security
-
-- All API keys stored in `.env` (gitignored)
-- `.env.example` provided as a template
-- CORS enabled for Streamlit frontend
-- No credentials hardcoded in source code
-
----
-
-## 👤 Author
-
-**Kartik Khanna**
+- Architected a **multi-agent GenAI platform** using A2A patterns to simulate adaptive system design interviews with Google Gemini
+- Implemented an **MCP-based tool layer** in Python/FastAPI enabling LLMs to perform RAG retrieval, rubric scoring, and Mermaid diagram generation
+- Built a **RAG pipeline** using Pinecone + Gemini Embeddings (768d, Matryoshka) for contextual interview evaluation grounding
+- Developed **Spring Boot 3 microservices** with Supabase PostgreSQL persistence, Upstash Redis session memory, and adaptive difficulty scaling
+- Deployed to production using **Render (IaC via render.yaml)**, **Vercel**, **Supabase**, **Upstash**, and **Pinecone** — fully on free tiers
+- Created a **premium React UI** with animated scoring, radial charts, glassmorphism design, and real-time interview flow
 
 ---
 
 ## 📄 License
 
-MIT License
+MIT

@@ -2,7 +2,7 @@
 
 A production-grade, cloud-deployed **multi-agent GenAI platform** that simulates adaptive system design interviews. Built with **Spring Boot 3**, **Python/FastAPI**, **Google Gemini**, **Pinecone RAG**, and **React** — deployed across **Render**, **Vercel**, **Supabase**, and **Upstash**.
 
-> **Live Demo:** [Frontend (Vercel)](https://systemdesigninterviews-mjsoi6stq-kartik0406s-projects.vercel.app) · [API Gateway (Render)](https://sdi-api-gateway.onrender.com) · [LLM Service (Render)](https://sdi-llm-service.onrender.com/health)
+> **Live Demo:** [Frontend (Vercel)](https://systemdesigninterviews-1m7p5skuo-kartik0406s-projects.vercel.app/) · [API Gateway (Render)](https://sdi-api-gateway.onrender.com/health) · [LLM Service (Render)](https://sdi-llm-service.onrender.com/health)
 
 ---
 
